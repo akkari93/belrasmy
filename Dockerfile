@@ -16,6 +16,9 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Keep build-time Prisma/Next.js imports deterministic; Coolify replaces this at runtime.
+ENV DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder"
+
 # Generate the Prisma client against the production PostgreSQL schema.
 RUN npx prisma generate
 
