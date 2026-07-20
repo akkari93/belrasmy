@@ -1,19 +1,18 @@
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
 function createPrismaClient(): PrismaClient {
-  if (process.env.DATABASE_URL?.startsWith("postgresql")) {
-    // For PostgreSQL (production/Coolify)
-    return new PrismaClient();
+  const connectionString = process.env.DATABASE_URL;
+
+  if (!connectionString?.startsWith("postgresql://") && !connectionString?.startsWith("postgres://")) {
+    throw new Error("DATABASE_URL must be a PostgreSQL connection string");
   }
 
-  // For SQLite (development)
-  const dbUrl = process.env.DATABASE_URL || "./prisma/dev.db";
-  const adapter = new PrismaBetterSqlite3({ url: dbUrl });
+  const adapter = new PrismaPg({ connectionString });
   return new PrismaClient({ adapter });
 }
 

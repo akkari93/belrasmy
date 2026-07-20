@@ -164,15 +164,26 @@ async function main() {
           }
         });
         
-        await prisma.price.create({
-          data: {
+        const existingPrice = await prisma.price.findFirst({
+          where: {
             variantId: variant.id,
             amount: variantData.price,
             source: 'manufacturer',
-            sourceDate: new Date(),
-            isActive: true
-          }
+            isActive: true,
+          },
         });
+
+        if (!existingPrice) {
+          await prisma.price.create({
+            data: {
+              variantId: variant.id,
+              amount: variantData.price,
+              source: 'manufacturer',
+              sourceDate: new Date(),
+              isActive: true
+            }
+          });
+        }
       }
     }
   }
