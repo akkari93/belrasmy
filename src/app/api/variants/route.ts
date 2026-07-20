@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
       orderBy: [{ year: "desc" }, { nameEn: "asc" }],
     });
 
-    const data = variants.map((v) => ({
+    const data = variants.map((v: any) => ({
       id: v.id,
       nameEn: v.nameEn,
       nameAr: v.nameAr,

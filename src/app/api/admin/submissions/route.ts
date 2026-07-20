@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
 
     const totalPages = Math.ceil(total / limit);
 
-    const data = submissions.map((s) => ({
+    const data = submissions.map((s: any) => ({
       id: s.id,
       makeName: s.variant.model.make.nameEn,
       modelName: s.variant.model.nameEn,
