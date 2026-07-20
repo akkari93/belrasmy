@@ -1,8 +1,8 @@
 # Use Node.js base image
 FROM node:22-alpine AS base
 
-# Install OpenSSL for Prisma
-RUN apk add --no-cache openssl
+# Install OpenSSL for Prisma and curl for Coolify health checks
+RUN apk add --no-cache openssl curl
 
 # Dependencies stage
 FROM base AS deps
