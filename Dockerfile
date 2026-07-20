@@ -8,7 +8,8 @@ RUN apk add --no-cache openssl
 FROM base AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+# Coolify passes NODE_ENV=production as a build arg; include build-time dependencies explicitly.
+RUN npm ci --include=dev
 
 # Builder stage
 FROM base AS builder
