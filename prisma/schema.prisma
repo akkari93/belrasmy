@@ -1,0 +1,176 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum SubmissionStatus {
+  PENDING
+  PUBLISHED
+  HIDDEN
+  REMOVED
+}
+
+enum ReportStatus {
+  PENDING
+  DISMISSED
+  ACTIONED
+}
+
+/// Car makes/manufacturers
+model Make {
+  id        String    @id @default(cuid())
+  nameEn    String    @unique
+  nameAr    String    @unique
+  slug      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  models    Model[]
+}
+
+/// Car models
+model Model {
+  id        String    @id @default(cuid())
+  makeId    String
+  make      Make      @relation(fields: [makeId], references: [id])
+  nameEn    String
+  nameAr    String
+  slug      String
+  yearStart Int?
+  yearEnd   Int?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  variants  Variant[]
+
+  @@unique([makeId, slug])
+  @@index([makeId])
+}
+
+/// Car variants/trims
+model Variant {
+  id        String    @id @default(cuid())
+  modelId   String
+  model     Model     @relation(fields: [modelId], references: [id])
+  nameEn    String
+  nameAr    String
+  slug      String
+  year      Int
+  engine    String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  prices    Price[]
+  submissions Submission[]
+
+  @@unique([modelId, slug, year])
+  @@index([modelId])
+}
+
+/// Official price snapshots
+model Price {
+  id         String   @id @default(cuid())
+  variantId  String
+  variant    Variant  @relation(fields: [variantId], references: [id])
+  amount     Float
+  currency   String   @default("EGP")
+  source     String   // e.g. "manufacturer", "importer", "reputable_website"
+  sourceUrl  String?
+  sourceDate DateTime
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([variantId, isActive])
+}
+
+/// Car dealers
+model Dealer {
+  id          String       @id @default(cuid())
+  nameEn      String
+  nameAr      String
+  slug        String       @unique
+  city        String?
+  governorate String?
+  phone       String?
+  website     String?
+  brands      String?   // comma-separated brand names
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  submissions Submission[]
+}
+
+/// Submissions (verified purchases at official price)
+model Submission {
+  id               String           @id @default(cuid())
+  dealerId         String
+  dealer           Dealer           @relation(fields: [dealerId], references: [id])
+  variantId        String
+  variant          Variant          @relation(fields: [variantId], references: [id])
+  purchasePrice    Float
+  officialPrice    Float?
+  priceMatch       Boolean          @default(true)
+  purchaseDate     DateTime
+  deliveryDate     DateTime?
+  deliveryTiming   String?          // "immediate", "1-2 weeks", "1 month", "2-3 months", etc.
+  phone            String?
+  evidenceUrl      String?
+  notes            String?
+  purchaserName    String?          // optional first name/initial
+  hasPurchased     Boolean          @default(true) // confirmed they purchased
+  deviceFingerprint String?
+  ipAddress        String?
+  status           SubmissionStatus @default(PENDING)
+  reportCount      Int              @default(0)
+  autoHiddenAt     DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  reports          Report[]
+
+  @@index([dealerId])
+  @@index([variantId])
+  @@index([status, createdAt])
+  @@index([deviceFingerprint])
+  @@index([ipAddress])
+}
+
+/// Reports against submissions
+model Report {
+  id               String       @id @default(cuid())
+  submissionId     String
+  submission       Submission   @relation(fields: [submissionId], references: [id])
+  reason           String       // "wrong_price", "no_stock", "overprice_charged", "fake", "other"
+  description      String?
+  reporterPhone    String?
+  deviceFingerprint String?
+  ipAddress        String?
+  status           ReportStatus @default(PENDING)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([submissionId])
+  @@index([status])
+  @@index([deviceFingerprint])
+  @@index([ipAddress])
+}
+
+/// Admin users
+model AdminUser {
+  id             String   @id @default(cuid())
+  username       String   @unique
+  passwordHash   String
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+/// App settings
+model Setting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+}
