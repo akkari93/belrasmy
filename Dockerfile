@@ -8,7 +8,6 @@ RUN apk add --no-cache openssl curl
 FROM base AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-# Coolify passes NODE_ENV=production as a build arg; include build-time dependencies explicitly.
 RUN npm ci --include=dev
 
 # Builder stage
@@ -17,13 +16,9 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Keep build-time Prisma/Next.js imports deterministic; Coolify replaces this at runtime.
-ENV DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder"
+ENV DATABASE_URL="postgresql://placeholder:***@localhost:5432/placeholder"
 
-# Generate the Prisma client against the production PostgreSQL schema.
 RUN npx prisma generate
-
-# Build Next.js
 RUN npm run build
 
 # Runner stage
@@ -32,6 +27,7 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV DATABASE_URL=postgresql://belrasmy:belrasmy@belrasmy-postgres:5432/belrasmy
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
