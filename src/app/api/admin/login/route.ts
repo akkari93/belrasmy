@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
 import { ADMIN_SESSION_TTL_SECONDS, adminTokenExpiry, hashAdminToken } from '@/lib/admin-auth';
+import { bootstrapAdminFromEnv } from '@/lib/admin-bootstrap';
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,18 +16,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const admin = await prisma.adminUser.findUnique({
-      where: { username },
-    });
+    const configuredUsername = process.env.ADMIN_USERNAME?.trim();
+    const configuredPassword = process.env.ADMIN_PASSWORD;
+    const hasSecureConfiguredCredentials = Boolean(
+      configuredUsername && configuredPassword && configuredPassword.length >= 16
+    );
 
-    if (!admin || !admin.isActive) {
+    if (process.env.NODE_ENV === 'production' && !hasSecureConfiguredCredentials) {
+      return Response.json(
+        { success: false, error: "Admin authentication is not configured" },
+        { status: 503 }
+      );
+    }
+
+    if (hasSecureConfiguredCredentials) {
+      if (username !== configuredUsername || password !== configuredPassword) {
+        return Response.json(
+          { success: false, error: "Invalid credentials" },
+          { status: 401 }
+        );
+      }
+      await bootstrapAdminFromEnv();
+    }
+
+    const admin = await prisma.adminUser.findUnique({ where: { username } });
+    if (!admin?.isActive) {
       return Response.json(
         { success: false, error: "Invalid credentials" },
         { status: 401 }
       );
     }
 
-    const valid = await bcrypt.compare(password, admin.passwordHash);
+    const valid = hasSecureConfiguredCredentials
+      ? true
+      : await bcrypt.compare(password, admin.passwordHash);
     if (!valid) {
       return Response.json(
         { success: false, error: "Invalid credentials" },
