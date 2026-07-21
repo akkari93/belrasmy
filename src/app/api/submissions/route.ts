@@ -33,17 +33,51 @@ export async function GET(request: NextRequest) {
 
     const submissions = await prisma.submission.findMany({
       where,
-      include: {
+      select: {
+        id: true,
+        purchasePrice: true,
+        officialPrice: true,
+        purchaseDate: true,
+        deliveryDate: true,
+        deliveryTiming: true,
+        status: true,
+        createdAt: true,
         variant: {
-          include: {
+          select: {
+            id: true,
+            nameEn: true,
+            nameAr: true,
+            slug: true,
+            year: true,
+            engine: true,
             model: {
-              include: {
-                make: true,
+              select: {
+                id: true,
+                nameEn: true,
+                nameAr: true,
+                slug: true,
+                make: {
+                  select: {
+                    id: true,
+                    nameEn: true,
+                    nameAr: true,
+                    slug: true,
+                  },
+                },
               },
             },
           },
         },
-        dealer: true,
+        dealer: {
+          select: {
+            id: true,
+            nameEn: true,
+            nameAr: true,
+            slug: true,
+            city: true,
+            governorate: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -145,18 +179,6 @@ export async function POST(request: NextRequest) {
         hasPurchased: hasPurchased ?? true,
         deviceFingerprint: deviceFingerprint || null,
         status: "PUBLISHED",
-      },
-      include: {
-        variant: {
-          include: {
-            model: {
-              include: {
-                make: true,
-              },
-            },
-          },
-        },
-        dealer: true,
       },
     });
 

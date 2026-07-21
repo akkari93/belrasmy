@@ -9,13 +9,24 @@ import {
 async function main() {
   console.log('Seeding database...');
 
-  // Admin user
-  const passwordHash = await bcrypt.hash('admin123', 10);
-  await prisma.adminUser.upsert({
-    where: { username: 'admin' },
-    update: {},
-    create: { username: 'admin', passwordHash },
-  });
+  const adminUsername = process.env.ADMIN_USERNAME?.trim();
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (!adminUsername || !adminPassword) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('ADMIN_USERNAME and ADMIN_PASSWORD are required for production seeding');
+    }
+    console.warn('Skipping admin seed: ADMIN_USERNAME and ADMIN_PASSWORD are not configured.');
+  } else {
+    if (adminPassword.length < 16) {
+      throw new Error('ADMIN_PASSWORD must be at least 16 characters');
+    }
+    const passwordHash = await bcrypt.hash(adminPassword, 12);
+    await prisma.adminUser.upsert({
+      where: { username: adminUsername },
+      update: { passwordHash, isActive: true },
+      create: { username: adminUsername, passwordHash },
+    });
+  }
 
   // Settings
   await prisma.setting.upsert({

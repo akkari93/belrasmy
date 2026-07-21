@@ -7,10 +7,6 @@ export interface SubmissionWithRelations {
   purchaseDate: Date;
   deliveryDate: Date | null;
   deliveryTiming: string | null;
-  phone: string | null;
-  evidenceUrl: string | null;
-  notes: string | null;
-  purchaserName: string | null;
   status: SubmissionStatus;
   createdAt: Date;
   dealer: {
@@ -53,7 +49,33 @@ export function serializeSubmission(submission: SubmissionWithRelations) {
     deliveryTiming: submission.deliveryTiming,
     status: submission.status,
     createdAt: submission.createdAt,
-    dealer: submission.dealer,
-    variant: submission.variant,
+    dealer: {
+      id: submission.dealer.id,
+      nameEn: submission.dealer.nameEn,
+      nameAr: submission.dealer.nameAr,
+      slug: submission.dealer.slug,
+      city: submission.dealer.city,
+      governorate: submission.dealer.governorate,
+    },
+    variant: {
+      id: submission.variant.id,
+      nameEn: submission.variant.nameEn,
+      nameAr: submission.variant.nameAr,
+      slug: submission.variant.slug,
+      year: submission.variant.year,
+      engine: submission.variant.engine,
+      model: {
+        id: submission.variant.model.id,
+        nameEn: submission.variant.model.nameEn,
+        nameAr: submission.variant.model.nameAr,
+        slug: submission.variant.model.slug,
+        make: {
+          id: submission.variant.model.make.id,
+          nameEn: submission.variant.model.make.nameEn,
+          nameAr: submission.variant.model.make.nameAr,
+          slug: submission.variant.model.make.slug,
+        },
+      },
+    },
   };
 }

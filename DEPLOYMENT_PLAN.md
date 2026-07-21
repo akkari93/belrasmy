@@ -45,50 +45,28 @@ Add these in the Coolify application settings under **Environment Variables**:
 
 ---
 
-## Step 4: Deploy & Run Migrations
+## Step 4: Deploy and initialize data
 
-1. Click **Deploy** in Coolify
-2. After the first deployment succeeds, you need to run the database migration and seed **once**:
-
-Connect to the Coolify server via SSH and run:
-
-```bash
-# Enter the running container
-docker exec -it belrasmy-app bash
-
-# Run migrations
-npx prisma db push
-
-# Run seed (only once!)
-npx tsx src/lib/seed.ts
-```
-
-**Important:** After running the seed, immediately change the admin password:
+1. Deploy the application from Coolify.
+2. The container synchronizes the PostgreSQL schema at startup; it does not run the seed automatically.
+3. Run the explicit seed command once from an approved container shell or release job, with the Coolify-managed admin variables present:
 
 ```bash
-docker exec -it belrasmy-app bash -c "node -e \"
-const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcryptjs');
-const prisma = new PrismaClient();
-async function main() {
-  const hash = await bcrypt.hash('YOUR_REAL_PASSWORD', 10);
-  await prisma.adminUser.update({ where: { username: 'admin' }, data: { passwordHash: hash } });
-  console.log('Admin password updated!');
-  await prisma.\$disconnect();
-}
-main();
-\""
+npm run seed
 ```
+
+The seed requires `ADMIN_USERNAME` and an `ADMIN_PASSWORD` of at least 16 characters when `NODE_ENV=production`. Keep these values in Coolify; never place them in the repository or shell history.
 
 ---
 
 ## Step 5: Verify
 
-1. Visit `https://belrasmy.yourdomain.com` (or whatever Coolify assigns)
-2. Check the homepage loads
-3. Try submitting a test report
-4. Visit `https://belrasmy.yourdomain.com/admin/login` and log in with `admin` / your password
-5. Verify the reports dashboard, dealers, and cars management work
+1. Visit the staging hostname.
+2. Check the homepage and populated public report cards.
+3. Submit a test report and verify the success-page link returns to the homepage.
+4. Open the admin login page and authenticate with the Coolify-managed staging credentials.
+5. Verify the reports dashboard, dealers, cars, settings, and protected API responses.
+6. Run `npm run test:e2e` with `BASE_URL` and the staging credentials.
 
 ---
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
+import { ADMIN_SESSION_TTL_SECONDS, adminTokenExpiry, hashAdminToken } from '@/lib/admin-auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,20 +34,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate token and store it
-    const token = crypto.randomUUID();
-    await prisma.setting.upsert({
-      where: { key: "admin_token" },
-      update: { value: token },
-      create: { key: "admin_token", value: token },
-    });
+    const token = crypto.randomBytes(32).toString('hex');
+    const tokenHash = hashAdminToken(token);
+    await prisma.$transaction([
+      prisma.setting.upsert({
+        where: { key: "admin_token" },
+        update: { value: tokenHash },
+        create: { key: "admin_token", value: tokenHash },
+      }),
+      prisma.setting.upsert({
+        where: { key: "admin_token_expires_at" },
+        update: { value: adminTokenExpiry() },
+        create: { key: "admin_token_expires_at", value: adminTokenExpiry() },
+      }),
+    ]);
 
     const res = NextResponse.json({ success: true });
     res.cookies.set("admin_token", token, {
       path: "/",
       httpOnly: true,
       sameSite: "lax",
-      maxAge: 86400, // 24 hours
+      secure:
+        request.nextUrl.protocol === 'https:' ||
+        request.headers.get('x-forwarded-proto')?.split(',')[0].trim() === 'https',
+      maxAge: ADMIN_SESSION_TTL_SECONDS,
     });
 
     return res;
