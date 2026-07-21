@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { serializeSubmission } from "@/lib/submission-view";
 
 export async function GET(request: NextRequest) {
   try {
@@ -47,17 +48,7 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: "desc" },
     });
 
-    const data = submissions.map((s: any) => ({
-      id: s.id,
-      makeName: s.variant.model.make.nameEn,
-      modelName: s.variant.model.nameEn,
-      variantName: s.variant.nameEn,
-      dealerName: s.dealer.nameEn,
-      purchasePrice: s.purchasePrice,
-      purchaseDate: s.purchaseDate,
-      deliveryTiming: s.deliveryTiming,
-      createdAt: s.createdAt,
-    }));
+    const data = submissions.map((submission) => serializeSubmission(submission));
 
     return Response.json(data);
   } catch (error) {
@@ -169,7 +160,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return Response.json(submission, { status: 201 });
+    return Response.json({ id: submission.id }, { status: 201 });
   } catch (error) {
     console.error("POST /api/submissions error:", error);
     return Response.json(

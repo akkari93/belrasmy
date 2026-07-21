@@ -5,10 +5,6 @@ export interface Submission {
   purchaseDate: string;
   deliveryDate: string | null;
   deliveryTiming: string | null;
-  phone: string | null;
-  evidenceUrl: string | null;
-  notes: string | null;
-  purchaserName: string | null;
   status: 'PENDING' | 'PUBLISHED' | 'HIDDEN' | 'REMOVED';
   createdAt: string;
   dealer: {
