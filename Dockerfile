@@ -37,6 +37,7 @@ COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder /app/src/lib ./src/lib
+COPY --from=builder /app/scripts/bootstrap-admin.mjs ./scripts/bootstrap-admin.mjs
 COPY --from=builder /app/node_modules ./node_modules
 
 RUN chown -R nextjs:nodejs /app
@@ -47,4 +48,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["sh", "-c", "node node_modules/prisma/build/index.js db push && node node_modules/tsx/dist/cli.mjs src/lib/bootstrap-admin.ts && node server.js"]
+CMD ["sh", "-c", "node node_modules/prisma/build/index.js db push && node scripts/bootstrap-admin.mjs && node server.js"]
