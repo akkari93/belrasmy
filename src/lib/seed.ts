@@ -1,5 +1,5 @@
 import { prisma } from './prisma';
-import bcrypt from 'bcryptjs';
+import { bootstrapAdminFromEnv } from './admin-bootstrap';
 import {
   EGYPT_MARKET_DEALERS,
   EGYPT_MARKET_MAKES,
@@ -20,12 +20,7 @@ async function main() {
     if (adminPassword.length < 16) {
       throw new Error('ADMIN_PASSWORD must be at least 16 characters');
     }
-    const passwordHash = await bcrypt.hash(adminPassword, 12);
-    await prisma.adminUser.upsert({
-      where: { username: adminUsername },
-      update: { passwordHash, isActive: true },
-      create: { username: adminUsername, passwordHash },
-    });
+    await bootstrapAdminFromEnv();
   }
 
   // Settings
