@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useLocale } from '@/lib/locale-context';
 import { getMakes, getDealers, createSubmission } from '@/lib/api';
 import { getDeviceFingerprint } from '@/lib/fingerprint';
-import type { Make, Dealer, Model, Variant } from '@/lib/api';
+import { SearchableSelect } from '@/components/searchable-select';
+import type { Make, Dealer } from '@/lib/api';
 
 const DELIVERY_TIMING_OPTIONS: [string, string, string][] = [
   ['immediate', 'فوري', 'Immediate'],
@@ -118,8 +119,8 @@ export default function SubmitPage() {
         deviceFingerprint: getDeviceFingerprint(),
       });
       router.push('/submit/success?id=' + result.id);
-    } catch (err: any) {
-      setError(err.message || t('حدث خطأ في الإرسال', 'Submission failed'));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t('حدث خطأ في الإرسال', 'Submission failed'));
     } finally {
       setSubmitting(false);
     }
@@ -127,6 +128,29 @@ export default function SubmitPage() {
 
   const makeModels = selectedMakeData?.models || [];
   const modelVariants = selectedModelData?.variants || [];
+  const selectDirection = locale === 'ar' ? 'rtl' : 'ltr';
+  const makeOptions = makes.map((make) => ({
+    value: make.id,
+    label: locale === 'ar' ? make.nameAr : make.nameEn,
+    searchText: `${make.nameEn} ${make.nameAr}`,
+  }));
+  const modelOptions = makeModels.map((model) => ({
+    value: model.id,
+    label: locale === 'ar' ? model.nameAr : model.nameEn,
+    searchText: `${model.nameEn} ${model.nameAr}`,
+  }));
+  const variantOptions = modelVariants.map((variant) => ({
+    value: variant.id,
+    label: `${locale === 'ar' ? variant.nameAr : variant.nameEn} (${variant.year})`,
+    searchText: `${variant.nameEn} ${variant.nameAr} ${variant.year} ${variant.engine || ''}`,
+    secondary: variant.engine || undefined,
+  }));
+  const dealerOptions = dealers.map((dealer) => ({
+    value: dealer.id,
+    label: locale === 'ar' ? dealer.nameAr : dealer.nameEn,
+    searchText: `${dealer.nameEn} ${dealer.nameAr} ${dealer.city || ''} ${dealer.governorate || ''}`,
+    secondary: [dealer.city, dealer.governorate].filter(Boolean).join(' - ') || undefined,
+  }));
 
   return (
     <div className="max-w-xl mx-auto px-4 py-8">
@@ -194,22 +218,19 @@ export default function SubmitPage() {
                 <label className="block text-sm font-medium text-dark mb-1">
                   {t('الماركة', 'Make')} *
                 </label>
-                <select
+                <SearchableSelect
                   value={selectedMake}
-                  onChange={(e) => {
-                    setSelectedMake(e.target.value);
+                  options={makeOptions}
+                  onChange={(value) => {
+                    setSelectedMake(value);
                     setSelectedModel('');
                     setSelectedVariant('');
                   }}
-                  className="w-full px-3 py-2.5 rounded-lg border border-border-light text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white"
-                >
-                  <option value="">{t('اختر الماركة...', 'Select make...')}</option>
-                  {makes.map((make) => (
-                    <option key={make.id} value={make.id}>
-                      {locale === 'ar' ? make.nameAr : make.nameEn}
-                    </option>
-                  ))}
-                </select>
+                  placeholder={t('ابحث عن الماركة...', 'Search makes...')}
+                  noResultsText={t('لا توجد ماركات مطابقة', 'No matching makes')}
+                  ariaLabel={t('الماركة', 'Make')}
+                  dir={selectDirection}
+                />
               </div>
 
               {/* Model */}
@@ -217,22 +238,19 @@ export default function SubmitPage() {
                 <label className="block text-sm font-medium text-dark mb-1">
                   {t('الموديل', 'Model')} *
                 </label>
-                <select
+                <SearchableSelect
                   value={selectedModel}
-                  onChange={(e) => {
-                    setSelectedModel(e.target.value);
+                  options={modelOptions}
+                  onChange={(value) => {
+                    setSelectedModel(value);
                     setSelectedVariant('');
                   }}
                   disabled={!selectedMake}
-                  className="w-full px-3 py-2.5 rounded-lg border border-border-light text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white disabled:bg-gray-50 disabled:text-gray-400"
-                >
-                  <option value="">{t('اختر الموديل...', 'Select model...')}</option>
-                  {makeModels.map((model) => (
-                    <option key={model.id} value={model.id}>
-                      {locale === 'ar' ? model.nameAr : model.nameEn}
-                    </option>
-                  ))}
-                </select>
+                  placeholder={t('ابحث عن الموديل...', 'Search models...')}
+                  noResultsText={t('لا توجد موديلات مطابقة', 'No matching models')}
+                  ariaLabel={t('الموديل', 'Model')}
+                  dir={selectDirection}
+                />
               </div>
 
               {/* Variant */}
@@ -240,20 +258,16 @@ export default function SubmitPage() {
                 <label className="block text-sm font-medium text-dark mb-1">
                   {t('الفئة', 'Variant')} *
                 </label>
-                <select
+                <SearchableSelect
                   value={selectedVariant}
-                  onChange={(e) => setSelectedVariant(e.target.value)}
+                  options={variantOptions}
+                  onChange={setSelectedVariant}
                   disabled={!selectedModel}
-                  className="w-full px-3 py-2.5 rounded-lg border border-border-light text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white disabled:bg-gray-50 disabled:text-gray-400"
-                >
-                  <option value="">{t('اختر الفئة...', 'Select variant...')}</option>
-                  {modelVariants.map((variant) => (
-                    <option key={variant.id} value={variant.id}>
-                      {locale === 'ar' ? variant.nameAr : variant.nameEn} ({variant.year})
-                      {variant.engine ? ` - ${variant.engine}` : ''}
-                    </option>
-                  ))}
-                </select>
+                  placeholder={t('ابحث عن الفئة...', 'Search trims...')}
+                  noResultsText={t('لا توجد فئات مطابقة', 'No matching trims')}
+                  ariaLabel={t('الفئة', 'Trim')}
+                  dir={selectDirection}
+                />
               </div>
 
               {/* Dealer */}
@@ -261,19 +275,15 @@ export default function SubmitPage() {
                 <label className="block text-sm font-medium text-dark mb-1">
                   {t('التاجر', 'Dealer')} *
                 </label>
-                <select
+                <SearchableSelect
                   value={selectedDealer}
-                  onChange={(e) => setSelectedDealer(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-lg border border-border-light text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white"
-                >
-                  <option value="">{t('اختر التاجر...', 'Select dealer...')}</option>
-                  {dealers.map((dealer) => (
-                    <option key={dealer.id} value={dealer.id}>
-                      {locale === 'ar' ? dealer.nameAr : dealer.nameEn}
-                      {dealer.city ? ` - ${dealer.city}` : ''}
-                    </option>
-                  ))}
-                </select>
+                  options={dealerOptions}
+                  onChange={setSelectedDealer}
+                  placeholder={t('ابحث عن التاجر...', 'Search dealers...')}
+                  noResultsText={t('لا يوجد تجار مطابقون', 'No matching dealers')}
+                  ariaLabel={t('التاجر', 'Dealer')}
+                  dir={selectDirection}
+                />
               </div>
 
               <div className="flex justify-end mt-4">

@@ -73,6 +73,7 @@ export interface Dealer {
   slug: string;
   city: string | null;
   governorate: string | null;
+  phone: string | null;
   brands: string | null;
 }
 
@@ -98,28 +99,39 @@ export async function getDealers(): Promise<Dealer[]> {
   return res.json();
 }
 
-export async function createSubmission(data: any): Promise<any> {
+type ApiPayload = Record<string, unknown>;
+type CreateSubmissionResult = { id: string; [key: string]: unknown };
+
+function getApiError(payload: unknown, fallback: string): string {
+  if (payload && typeof payload === 'object' && 'error' in payload) {
+    const error = payload.error;
+    if (typeof error === 'string') return error;
+  }
+  return fallback;
+}
+
+export async function createSubmission(data: ApiPayload): Promise<CreateSubmissionResult> {
   const res = await fetch('/api/submissions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Submission failed' }));
-    throw new Error(err.error || 'Submission failed');
+    const err: unknown = await res.json().catch(() => ({ error: 'Submission failed' }));
+    throw new Error(getApiError(err, 'Submission failed'));
   }
   return res.json();
 }
 
-export async function reportSubmission(id: string, data: any): Promise<any> {
+export async function reportSubmission(id: string, data: ApiPayload): Promise<ApiPayload> {
   const res = await fetch('/api/submissions/' + id + '/report', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Report failed' }));
-    throw new Error(err.error || 'Report failed');
+    const err: unknown = await res.json().catch(() => ({ error: 'Report failed' }));
+    throw new Error(getApiError(err, 'Report failed'));
   }
   return res.json();
 }

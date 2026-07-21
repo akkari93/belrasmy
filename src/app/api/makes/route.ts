@@ -13,6 +13,7 @@ export async function GET() {
                 nameAr: true,
                 slug: true,
                 year: true,
+                engine: true,
               },
             },
           },
