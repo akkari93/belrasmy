@@ -1,7 +1,11 @@
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/admin-auth";
 
 export async function GET() {
   try {
+    const unauthorized = await requireAdmin();
+    if (unauthorized) return unauthorized;
+
     const makes = await prisma.make.findMany({
       include: {
         models: {
@@ -27,7 +31,7 @@ export async function GET() {
       orderBy: { nameEn: "asc" },
     });
 
-    return Response.json(makes);
+    return Response.json({ makes });
   } catch (error) {
     console.error("GET /api/admin/makes error:", error);
     return Response.json(

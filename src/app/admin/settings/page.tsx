@@ -42,7 +42,7 @@ export default function AdminSettingsPage() {
     setSavingKey(id);
     try {
       const res = await fetch('/api/admin/settings', {
-        method: 'PATCH',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key, value: editing[id] }),
       });

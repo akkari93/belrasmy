@@ -25,12 +25,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
 
     fetch('/api/admin/check')
-      .then((res) => {
-        if (!res.ok) throw new Error('Not authenticated');
+      .then(async (res) => {
+        const data = await res.json().catch(() => null);
+        if (!res.ok || data?.authenticated !== true) {
+          throw new Error('Not authenticated');
+        }
         setAuthed(true);
       })
       .catch(() => {
-        router.push('/admin/login');
+        setAuthed(false);
+        router.replace('/admin/login');
       });
   }, [pathname, router]);
 
@@ -38,7 +42,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return <>{children}</>;
   }
 
-  if (authed === null) {
+  if (authed !== true) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin h-8 w-8 border-4 border-emerald-500 border-t-transparent rounded-full" />

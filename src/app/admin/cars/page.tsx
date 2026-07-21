@@ -93,7 +93,7 @@ export default function AdminCarsPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      await fetch('/api/admin/makes', {
+      await fetch('/api/admin/models', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -114,7 +114,7 @@ export default function AdminCarsPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      await fetch('/api/admin/makes', {
+      await fetch('/api/admin/variants', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -134,7 +134,7 @@ export default function AdminCarsPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      await fetch('/api/admin/makes', {
+      await fetch('/api/admin/prices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

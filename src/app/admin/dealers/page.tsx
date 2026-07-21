@@ -78,8 +78,8 @@ export default function AdminDealersPage() {
     setSaving(true);
     try {
       if (editId) {
-        await fetch('/api/admin/dealers', {
-          method: 'PATCH',
+        await fetch(`/api/admin/dealers/${editId}`, {
+          method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: editId, ...form }),
         });
@@ -101,8 +101,8 @@ export default function AdminDealersPage() {
 
   async function toggleActive(dealer: Dealer) {
     try {
-      await fetch('/api/admin/dealers', {
-        method: 'PATCH',
+      await fetch(`/api/admin/dealers/${dealer.id}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: dealer.id, isActive: !dealer.isActive }),
       });

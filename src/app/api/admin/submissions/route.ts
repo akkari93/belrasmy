@@ -1,8 +1,12 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/admin-auth";
 
 export async function GET(request: NextRequest) {
   try {
+    const unauthorized = await requireAdmin();
+    if (unauthorized) return unauthorized;
+
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get("status");
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
@@ -35,6 +39,9 @@ export async function GET(request: NextRequest) {
               slug: true,
             },
           },
+          _count: {
+            select: { reports: true },
+          },
         },
         orderBy: { createdAt: "desc" },
         skip,
@@ -47,20 +54,31 @@ export async function GET(request: NextRequest) {
 
     const data = submissions.map((s: any) => ({
       id: s.id,
-      makeName: s.variant.model.make.nameEn,
-      modelName: s.variant.model.nameEn,
-      variantName: s.variant.nameEn,
-      dealerName: s.dealer.nameEn,
-      dealer: s.dealer,
-      purchasePrice: s.purchasePrice,
-      purchaseDate: s.purchaseDate,
-      deliveryTiming: s.deliveryTiming,
-      phone: s.phone,
-      purchaserName: s.purchaserName,
-      status: s.status,
-      reportCount: s.reportCount,
-      createdAt: s.createdAt,
-    }));
+        purchasePrice: s.purchasePrice,
+        officialPrice: s.officialPrice,
+        purchaseDate: s.purchaseDate,
+        status: s.status,
+        reportCount: s.reportCount,
+        createdAt: s.createdAt,
+        dealer: s.dealer,
+        variant: {
+          id: s.variant.id,
+          nameEn: s.variant.nameEn,
+          nameAr: s.variant.nameAr,
+          year: s.variant.year,
+          model: {
+            id: s.variant.model.id,
+            nameEn: s.variant.model.nameEn,
+            nameAr: s.variant.model.nameAr,
+            make: {
+              id: s.variant.model.make.id,
+              nameEn: s.variant.model.make.nameEn,
+              nameAr: s.variant.model.make.nameAr,
+            },
+          },
+        },
+        _count: s._count,
+      }));
 
     return Response.json({
       submissions: data,

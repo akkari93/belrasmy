@@ -1,8 +1,12 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/admin-auth";
 
 export async function GET() {
   try {
+    const unauthorized = await requireAdmin();
+    if (unauthorized) return unauthorized;
+
     const dealers = await prisma.dealer.findMany({
       include: {
         _count: {
@@ -12,7 +16,7 @@ export async function GET() {
       orderBy: { nameEn: "asc" },
     });
 
-    return Response.json(dealers);
+    return Response.json({ dealers });
   } catch (error) {
     console.error("GET /api/admin/dealers error:", error);
     return Response.json(
@@ -24,6 +28,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const unauthorized = await requireAdmin();
+    if (unauthorized) return unauthorized;
+
     const body = await request.json();
     const { nameEn, nameAr, slug, city, governorate, phone, website, brands, isActive } = body;
 

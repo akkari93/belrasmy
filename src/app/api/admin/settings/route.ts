@@ -1,14 +1,17 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/admin-auth";
 
 export async function GET() {
   try {
-    const settings = await prisma.setting.findMany();
-    const data: Record<string, string> = {};
-    for (const s of settings) {
-      data[s.key] = s.value;
-    }
-    return Response.json(data);
+    const unauthorized = await requireAdmin();
+    if (unauthorized) return unauthorized;
+
+    const settings = await prisma.setting.findMany({
+      where: { key: { not: "admin_token" } },
+      orderBy: { key: "asc" },
+    });
+    return Response.json({ settings });
   } catch (error) {
     console.error("GET /api/admin/settings error:", error);
     return Response.json(
@@ -20,9 +23,12 @@ export async function GET() {
 
 export async function PUT(request: NextRequest) {
   try {
+    const unauthorized = await requireAdmin();
+    if (unauthorized) return unauthorized;
+
     const { key, value } = await request.json();
 
-    if (!key || value === undefined || value === null) {
+    if (!key || key === "admin_token" || value === undefined || value === null) {
       return Response.json(
         { error: "key and value are required" },
         { status: 400 }

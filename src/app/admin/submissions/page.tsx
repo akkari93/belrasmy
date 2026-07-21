@@ -57,8 +57,8 @@ export default function AdminSubmissionsPage() {
 
   async function changeStatus(submissionId: string, status: string) {
     try {
-      const res = await fetch('/api/admin/submissions', {
-        method: 'PATCH',
+      const res = await fetch(`/api/admin/submissions/${submissionId}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ submissionId, status }),
       });

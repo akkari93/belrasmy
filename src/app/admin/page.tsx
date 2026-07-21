@@ -61,10 +61,15 @@ export default function AdminDashboardPage() {
 
   async function handleAction(submissionId: string, action: string) {
     try {
-      const res = await fetch('/api/admin/reports', {
-        method: 'PATCH',
+      const statusByAction: Record<string, string> = {
+        hide: 'HIDDEN',
+        publish: 'PUBLISHED',
+        remove: 'REMOVED',
+      };
+      const res = await fetch(`/api/admin/submissions/${submissionId}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ submissionId, action }),
+        body: JSON.stringify({ status: statusByAction[action] }),
       });
       if (res.ok) {
         fetchReports();
@@ -76,10 +81,14 @@ export default function AdminDashboardPage() {
 
   async function handleReportAction(reportId: string, action: string) {
     try {
+      const statusByAction: Record<string, string> = {
+        dismiss: 'DISMISSED',
+        action: 'ACTIONED',
+      };
       const res = await fetch(`/api/admin/reports/${reportId}`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({ status: statusByAction[action] }),
       });
       if (res.ok) {
         fetchReports();
@@ -93,7 +102,7 @@ export default function AdminDashboardPage() {
     setSaving(true);
     try {
       await fetch('/api/admin/settings', {
-        method: 'PATCH',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key: 'report_threshold', value: newThreshold }),
       });
